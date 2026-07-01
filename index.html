@@ -1,0 +1,1225 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chiikawa计时器</title>
+  <style>
+    :root {
+      --bg: #fff1f6;
+      --panel: #fff9fc;
+      --ink: #392731;
+      --muted: #8a6475;
+      --line: #f3c9d8;
+      --teal: #ec6f9f;
+      --teal-dark: #bc4778;
+      --coral: #ff8aa8;
+      --sun: #ffd36e;
+      --mint: #ffe2ec;
+      --shadow: 0 18px 48px rgba(157, 72, 106, .16);
+      font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        linear-gradient(120deg, rgba(255, 138, 168, .32), transparent 34%),
+        linear-gradient(240deg, rgba(255, 211, 110, .22), transparent 38%),
+        var(--bg);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 36px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(26px, 4vw, 44px);
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .today {
+      min-width: 250px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 253, 248, .82);
+      text-align: right;
+    }
+
+    .today strong {
+      display: block;
+      font-size: 22px;
+    }
+
+    .today span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .goal-editor {
+      display: grid;
+      grid-template-columns: 1fr 96px;
+      align-items: end;
+      gap: 8px;
+      margin-top: 10px;
+      text-align: left;
+    }
+
+    .goal-editor label {
+      display: grid;
+      gap: 5px;
+    }
+
+    .goal-editor input {
+      padding: 8px 9px;
+      text-align: center;
+    }
+
+    .goal-editor .ghost-btn {
+      padding: 8px 10px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 253, 248, .9);
+      box-shadow: var(--shadow);
+    }
+
+    .sidebar {
+      padding: 16px;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .ghost-btn,
+    .icon-btn {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffaf1;
+      color: var(--ink);
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+
+    .ghost-btn {
+      padding: 9px 12px;
+      white-space: nowrap;
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      display: inline-grid;
+      place-items: center;
+      font-size: 18px;
+    }
+
+    .ghost-btn:hover,
+    .icon-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(236, 111, 159, .58);
+      background: #ffffff;
+    }
+
+    form {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffaf1;
+      margin-bottom: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 11px;
+      background: #fffefb;
+      color: var(--ink);
+      outline: none;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 68px;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(236, 111, 159, .16);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .primary-btn,
+    .danger-btn {
+      border-radius: 8px;
+      padding: 11px 14px;
+      color: white;
+      font-weight: 700;
+      transition: transform .18s ease, filter .18s ease;
+    }
+
+    .primary-btn {
+      background: var(--teal);
+    }
+
+    .danger-btn {
+      background: var(--coral);
+    }
+
+    .primary-btn:hover,
+    .danger-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+    }
+
+    .project-list {
+      display: grid;
+      gap: 10px;
+      max-height: 520px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .project-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fffefb;
+      text-align: left;
+      transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+
+    .project-card:hover,
+    .project-card.active {
+      border-color: rgba(31, 154, 148, .65);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(48, 44, 37, .1);
+    }
+
+    .project-card strong {
+      display: block;
+      font-size: 16px;
+      overflow-wrap: anywhere;
+    }
+
+    .project-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 7px;
+      border-radius: 999px;
+      background: var(--mint);
+      color: var(--teal-dark);
+    }
+
+    .stage {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) minmax(280px, 390px);
+      gap: 20px;
+      padding: 18px;
+      min-height: 640px;
+    }
+
+    .timer-area {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-width: 0;
+      gap: 18px;
+    }
+
+    .status-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #6f3a52;
+      color: #fffdf8;
+    }
+
+    .status-strip span {
+      color: rgba(255, 253, 248, .72);
+      font-size: 13px;
+    }
+
+    .timer-display {
+      display: grid;
+      place-items: center;
+      min-height: 305px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(255, 226, 236, .94), rgba(255, 250, 251, .98)),
+        #fffefb;
+      text-align: center;
+      padding: 26px;
+    }
+
+    .timer-display h2 {
+      margin: 0 0 12px;
+      max-width: 100%;
+      font-size: clamp(22px, 3vw, 36px);
+      overflow-wrap: anywhere;
+    }
+
+    .clock {
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(56px, 11vw, 116px);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 0;
+      color: var(--ink);
+    }
+
+    .timer-note {
+      margin: 12px auto 0;
+      max-width: 520px;
+      color: var(--muted);
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .controls button {
+      min-height: 48px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fffefb;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 23px;
+      margin-bottom: 2px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .companion {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+      min-height: 604px;
+    }
+
+    .buddy-scene {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 405px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 78%, rgba(255, 211, 110, .26), transparent 34%),
+        linear-gradient(180deg, #fff0f6, #fffaf1);
+    }
+
+    .buddy-scene::after {
+      content: "";
+      position: absolute;
+      left: 12%;
+      right: 12%;
+      bottom: 42px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(40, 50, 56, .12);
+      filter: blur(7px);
+    }
+
+    .buddy {
+      position: relative;
+      z-index: 1;
+      width: min(82%, 300px);
+      transform-origin: 50% 85%;
+      filter: drop-shadow(0 18px 20px rgba(45, 44, 39, .18));
+      transition: transform .28s ease, filter .28s ease;
+      user-select: none;
+    }
+
+    .buddy.idle {
+      animation: breathe 3s ease-in-out infinite;
+    }
+
+    .buddy.focus {
+      animation: focusPulse 1.8s ease-in-out infinite;
+    }
+
+    .buddy.happy {
+      animation: hop .65s ease;
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-8px) scale(1.015); }
+    }
+
+    @keyframes focusPulse {
+      0%, 100% { transform: translateY(-4px) rotate(-1deg); }
+      50% { transform: translateY(-10px) rotate(1deg); }
+    }
+
+    @keyframes hop {
+      0%, 100% { transform: translateY(0) scale(1); }
+      35% { transform: translateY(-22px) scale(1.04); }
+      70% { transform: translateY(0) scale(.98, 1.02); }
+    }
+
+    .speech {
+      min-height: 76px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffefb;
+      line-height: 1.65;
+      color: var(--ink);
+    }
+
+    .chat-panel {
+      display: grid;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: rgba(255, 254, 251, .86);
+    }
+
+    .chat-log {
+      display: grid;
+      align-content: start;
+      gap: 8px;
+      min-height: 118px;
+      max-height: 178px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .chat-row {
+      width: fit-content;
+      max-width: 86%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .chat-row.user {
+      justify-self: end;
+      background: var(--teal);
+      color: #fff;
+    }
+
+    .chat-row.pet {
+      justify-self: start;
+      background: #fff0f6;
+      color: var(--ink);
+    }
+
+    .chat-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      margin: 0;
+    }
+
+    .chat-form input {
+      min-width: 0;
+    }
+
+    .mood-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mood-meter {
+      height: 12px;
+      border-radius: 999px;
+      background: #f4d5df;
+      overflow: hidden;
+    }
+
+    .mood-fill {
+      width: 50%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ffd6e3, var(--coral), var(--teal));
+      transition: width .3s ease;
+    }
+
+    .interaction-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .interaction-grid button {
+      min-height: 44px;
+    }
+
+    .empty {
+      padding: 22px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      line-height: 1.7;
+      background: rgba(255, 253, 248, .65);
+    }
+
+    @media (max-width: 920px) {
+      .workspace,
+      .stage {
+        grid-template-columns: 1fr;
+      }
+
+      .companion {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .app {
+        width: min(100% - 20px, 1180px);
+        padding-top: 18px;
+      }
+
+      .topbar,
+      .status-strip {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .today {
+        text-align: left;
+      }
+
+      .form-row,
+      .controls,
+      .stats,
+      .interaction-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stage {
+        padding: 12px;
+      }
+
+      .timer-display {
+        min-height: 250px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>Chiikawa计时器</h1>
+        <p>粉色陪读、目标计分和软乎乎的计时状态都放在这里。</p>
+      </div>
+      <div class="today">
+        <strong id="todayMinutes">0 分钟</strong>
+        <span>今日陪读</span>
+        <div class="goal-editor">
+          <label for="dailyGoalInput">
+            今日目标
+            <input id="dailyGoalInput" type="number" min="1" max="1440" value="60">
+          </label>
+          <button class="ghost-btn" id="saveDailyGoal" type="button">保存</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="panel sidebar">
+        <div class="section-title">
+          <h2>读书项目</h2>
+          <button class="icon-btn" id="toggleForm" title="新建项目" type="button">＋</button>
+        </div>
+
+        <form id="projectForm">
+          <div class="field">
+            <label for="projectName">项目名称</label>
+            <input id="projectName" maxlength="36" placeholder="例如：英语阅读 30 分钟" required>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="timerMode">计时方式</label>
+              <select id="timerMode">
+                <option value="up">正计时</option>
+                <option value="down">倒计时</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="targetMinutes">目标分钟</label>
+              <input id="targetMinutes" type="number" min="1" max="999" value="25">
+            </div>
+          </div>
+          <div class="field">
+            <label for="projectNote">陪读备注</label>
+            <textarea id="projectNote" maxlength="100" placeholder="今天想完成什么？"></textarea>
+          </div>
+          <button class="primary-btn" type="submit">创建项目</button>
+        </form>
+
+        <div id="projectList" class="project-list"></div>
+      </aside>
+
+      <section class="panel stage">
+        <div class="timer-area">
+          <div class="status-strip">
+            <div>
+              <strong id="statusTitle">准备开始</strong><br>
+              <span id="statusText">选一个项目，Chiikawa 会跟着你进入状态。</span>
+            </div>
+            <button class="ghost-btn" id="clearDone" type="button">清空完成</button>
+          </div>
+
+          <div class="timer-display">
+            <div>
+              <h2 id="activeName">还没有选择项目</h2>
+              <div class="clock" id="clock">00:00</div>
+              <p class="timer-note" id="activeNote">新建一个陪读项目，或者从左侧选择已有项目。</p>
+            </div>
+          </div>
+
+          <div class="controls">
+            <button class="primary-btn" id="startPause" type="button">开始</button>
+            <button class="ghost-btn" id="resetTimer" type="button">重置</button>
+            <button class="ghost-btn" id="finishTimer" type="button">完成</button>
+            <button class="danger-btn" id="deleteProject" type="button">删除</button>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <strong id="totalFocus">0</strong>
+              <span>累计分钟</span>
+            </div>
+            <div class="stat">
+              <strong id="doneCount">0</strong>
+              <span>完成次数</span>
+            </div>
+            <div class="stat">
+              <strong id="streakScore">0</strong>
+              <span>满意值</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="companion">
+          <div class="buddy-scene">
+            <img id="buddy" class="buddy idle" src="assets/pets/pet-1.png" alt="陪读卡通形象">
+          </div>
+          <div class="speech" id="speech">我已经坐好啦。今天从哪一本开始？</div>
+          <div class="chat-panel">
+            <div class="chat-log" id="chatLog" aria-live="polite"></div>
+            <form class="chat-form" id="chatForm">
+              <input id="chatInput" maxlength="80" placeholder="和陪读宠物说句话">
+              <button class="primary-btn" type="submit">发送</button>
+            </form>
+          </div>
+          <div class="mood-row">
+            <div class="mood-meter" aria-label="满意值">
+              <div class="mood-fill" id="moodFill"></div>
+            </div>
+            <strong id="moodText">50</strong>
+          </div>
+          <div class="interaction-grid">
+            <button class="ghost-btn" data-action="pat" type="button">摸摸头</button>
+            <button class="ghost-btn" data-action="snack" type="button">小点心</button>
+            <button class="ghost-btn" data-action="cheer" type="button">求鼓励</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "readingBuddyState";
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const PET_IMAGES = {
+      start: "assets/pets/pet-1.png",
+      tenMinutes: "assets/pets/pet-2.png",
+      deepFocus: "assets/pets/pet-3.png",
+      finish: "assets/pets/pet-4.png"
+    };
+
+    const defaults = {
+      projects: [],
+      activeId: null,
+      interactionPoints: 0,
+      dailyGoalMinutes: 60,
+      totalSeconds: 0,
+      todaySeconds: {},
+      completions: 0,
+      chatHistory: []
+    };
+
+    let state = loadState();
+    let timer = {
+      running: false,
+      startedAt: null,
+      elapsedBeforeStart: 0
+    };
+    let ticker = null;
+    let showFinishPose = false;
+
+    const els = {
+      form: document.getElementById("projectForm"),
+      projectName: document.getElementById("projectName"),
+      timerMode: document.getElementById("timerMode"),
+      targetMinutes: document.getElementById("targetMinutes"),
+      projectNote: document.getElementById("projectNote"),
+      projectList: document.getElementById("projectList"),
+      activeName: document.getElementById("activeName"),
+      activeNote: document.getElementById("activeNote"),
+      clock: document.getElementById("clock"),
+      startPause: document.getElementById("startPause"),
+      resetTimer: document.getElementById("resetTimer"),
+      finishTimer: document.getElementById("finishTimer"),
+      deleteProject: document.getElementById("deleteProject"),
+      clearDone: document.getElementById("clearDone"),
+      statusTitle: document.getElementById("statusTitle"),
+      statusText: document.getElementById("statusText"),
+      totalFocus: document.getElementById("totalFocus"),
+      todayMinutes: document.getElementById("todayMinutes"),
+      doneCount: document.getElementById("doneCount"),
+      streakScore: document.getElementById("streakScore"),
+      speech: document.getElementById("speech"),
+      moodFill: document.getElementById("moodFill"),
+      moodText: document.getElementById("moodText"),
+      buddy: document.getElementById("buddy"),
+      toggleForm: document.getElementById("toggleForm"),
+      chatLog: document.getElementById("chatLog"),
+      chatForm: document.getElementById("chatForm"),
+      chatInput: document.getElementById("chatInput"),
+      dailyGoalInput: document.getElementById("dailyGoalInput"),
+      saveDailyGoal: document.getElementById("saveDailyGoal")
+    };
+
+    function loadState() {
+      try {
+        const saved = { ...defaults, ...JSON.parse(localStorage.getItem(STORAGE_KEY)) };
+        saved.chatHistory = Array.isArray(saved.chatHistory) ? saved.chatHistory.slice(-30) : [];
+        if (typeof saved.interactionPoints !== "number") {
+          saved.interactionPoints = clamp(Math.round((saved.mood || 0) / 5), 0, 20);
+        }
+        saved.dailyGoalMinutes = clamp(Number(saved.dailyGoalMinutes) || 60, 1, 1440);
+        return saved;
+      } catch {
+        return { ...defaults };
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function activeProject() {
+      return state.projects.find(project => project.id === state.activeId) || null;
+    }
+
+    function currentElapsed() {
+      if (!timer.running) return timer.elapsedBeforeStart;
+      return timer.elapsedBeforeStart + Math.floor((Date.now() - timer.startedAt) / 1000);
+    }
+
+    function displayedSeconds(project) {
+      const elapsed = currentElapsed();
+      if (!project) return 0;
+      if (project.mode === "down") {
+        return Math.max(0, project.targetSeconds - elapsed);
+      }
+      return elapsed;
+    }
+
+    function formatTime(seconds) {
+      const safe = Math.max(0, seconds);
+      const h = Math.floor(safe / 3600);
+      const m = Math.floor((safe % 3600) / 60);
+      const s = safe % 60;
+      if (h > 0) return `${pad(h)}:${pad(m)}:${pad(s)}`;
+      return `${pad(m)}:${pad(s)}`;
+    }
+
+    function pad(value) {
+      return String(value).padStart(2, "0");
+    }
+
+    function selectProject(id) {
+      stopTimer();
+      state.activeId = id;
+      timer.elapsedBeforeStart = 0;
+      showFinishPose = false;
+      saveState();
+      speak("我翻到这一页了，我们可以开始。");
+      render();
+    }
+
+    function startPause() {
+      const project = activeProject();
+      if (!project) {
+        speak("先建一个项目吧，我会乖乖等你。");
+        bounce();
+        return;
+      }
+      if (timer.running) {
+        pauseTimer();
+        speak("暂停一下也没关系，书签我帮你夹好。");
+      } else {
+        showFinishPose = false;
+        timer.running = true;
+        timer.startedAt = Date.now();
+        els.startPause.textContent = "暂停";
+        setBuddyMode("focus");
+        speak(project.mode === "down" ? "倒计时开始，我帮你守住这段时间。" : "正计时开始，慢慢读也算数。");
+        ticker = setInterval(tick, 250);
+      }
+      render();
+    }
+
+    function pauseTimer() {
+      timer.elapsedBeforeStart = currentElapsed();
+      stopTimer(false);
+    }
+
+    function stopTimer(resetElapsed = false) {
+      timer.running = false;
+      timer.startedAt = null;
+      clearInterval(ticker);
+      ticker = null;
+      els.startPause.textContent = "开始";
+      setBuddyMode("idle");
+      if (resetElapsed) timer.elapsedBeforeStart = 0;
+    }
+
+    function tick() {
+      const project = activeProject();
+      if (!project) return;
+      if (project.mode === "down" && currentElapsed() >= project.targetSeconds) {
+        completeSession(true);
+        return;
+      }
+      renderClockOnly();
+    }
+
+    function completeSession(auto = false) {
+      const project = activeProject();
+      if (!project) return;
+      const elapsed = Math.max(1, currentElapsed());
+      project.spentSeconds += elapsed;
+      project.completed += 1;
+      project.lastDone = new Date().toISOString();
+      state.totalSeconds += elapsed;
+      state.todaySeconds[todayKey] = (state.todaySeconds[todayKey] || 0) + elapsed;
+      state.completions += 1;
+      timer.elapsedBeforeStart = 0;
+      showFinishPose = true;
+      stopTimer();
+      saveState();
+      speak(auto ? "时间到！你真的守住了这一轮。" : "完成记录收好啦，今天的你很稳。");
+      bounce();
+      render();
+    }
+
+    function resetTimer() {
+      stopTimer(true);
+      showFinishPose = false;
+      speak("这轮重新开始，我把计时器擦干净了。");
+      render();
+    }
+
+    function deleteProject() {
+      const project = activeProject();
+      if (!project) return;
+      state.projects = state.projects.filter(item => item.id !== project.id);
+      state.activeId = state.projects[0]?.id || null;
+      stopTimer(true);
+      showFinishPose = false;
+      saveState();
+      speak("项目已经收起来了，换一本也可以。");
+      render();
+    }
+
+    function render() {
+      renderProjects();
+      renderActive();
+      renderStats();
+      renderMood();
+      renderChat();
+      updateBuddyImage();
+    }
+
+    function renderProjects() {
+      if (state.projects.length === 0) {
+        els.projectList.innerHTML = `<div class="empty">还没有项目。创建一个阅读、背诵、刷题或复盘任务，就能开始陪读。</div>`;
+        return;
+      }
+      els.projectList.innerHTML = state.projects.map(project => {
+        const mode = project.mode === "down" ? "倒数" : "正数";
+        const target = Math.round(project.targetSeconds / 60);
+        return `
+          <button class="project-card ${project.id === state.activeId ? "active" : ""}" data-id="${project.id}" type="button">
+            <strong>${escapeHtml(project.name)}</strong>
+            <div class="project-meta">
+              <span class="tag">${mode}</span>
+              <span>${target} 分钟</span>
+              <span>${Math.floor(project.spentSeconds / 60)} 分钟累计</span>
+            </div>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function renderActive() {
+      const project = activeProject();
+      els.deleteProject.disabled = !project;
+      els.finishTimer.disabled = !project;
+      els.resetTimer.disabled = !project;
+      if (!project) {
+        els.activeName.textContent = "还没有选择项目";
+        els.activeNote.textContent = "新建一个陪读项目，或者从左侧选择已有项目。";
+        els.clock.textContent = "00:00";
+        els.statusTitle.textContent = "准备开始";
+        els.statusText.textContent = "选一个项目，Chiikawa 会跟着你进入状态。";
+        return;
+      }
+      els.activeName.textContent = project.name;
+      els.activeNote.textContent = project.note || "保持一小段稳定的专注，比想象中更有力量。";
+      els.statusTitle.textContent = timer.running ? "正在陪读" : "等待开始";
+      els.statusText.textContent = project.mode === "down"
+        ? `目标 ${Math.round(project.targetSeconds / 60)} 分钟，倒计时结束会自动完成。`
+        : `正计时模式，读到合适的位置再点完成。`;
+      renderClockOnly();
+    }
+
+    function renderClockOnly() {
+      const project = activeProject();
+      els.clock.textContent = formatTime(displayedSeconds(project));
+      updateBuddyImage();
+    }
+
+    function renderStats() {
+      const totalMinutes = Math.floor(state.totalSeconds / 60);
+      const todayMinutes = Math.floor((state.todaySeconds[todayKey] || 0) / 60);
+      const satisfaction = satisfactionScore();
+      els.totalFocus.textContent = totalMinutes;
+      els.todayMinutes.textContent = `${todayMinutes} 分钟`;
+      els.doneCount.textContent = state.completions;
+      els.streakScore.textContent = satisfaction;
+    }
+
+    function renderMood() {
+      const score = satisfactionScore();
+      els.moodFill.style.width = `${score}%`;
+      els.moodText.textContent = score;
+      els.dailyGoalInput.value = state.dailyGoalMinutes;
+    }
+
+    function todayStudyScore() {
+      const goalSeconds = Math.max(60, state.dailyGoalMinutes * 60);
+      const todaySeconds = state.todaySeconds[todayKey] || 0;
+      return Math.min(80, Math.round((todaySeconds / goalSeconds) * 80));
+    }
+
+    function interactionScore() {
+      return clamp(Math.round(state.interactionPoints || 0), 0, 20);
+    }
+
+    function satisfactionScore() {
+      return clamp(todayStudyScore() + interactionScore(), 0, 100);
+    }
+
+    function addInteraction(points) {
+      state.interactionPoints = clamp((state.interactionPoints || 0) + points, 0, 20);
+    }
+
+    function renderChat() {
+      if (!state.chatHistory.length) {
+        els.chatLog.innerHTML = `<div class="chat-row pet">和我说话吧。否定的时候我会说“呀哒！”，其他时候会软乎乎地回应。</div>`;
+        return;
+      }
+      els.chatLog.innerHTML = state.chatHistory.map(item => (
+        `<div class="chat-row ${item.from}">${escapeHtml(item.text)}</div>`
+      )).join("");
+      els.chatLog.scrollTop = els.chatLog.scrollHeight;
+    }
+
+    function addChat(from, text) {
+      state.chatHistory.push({ from, text });
+      state.chatHistory = state.chatHistory.slice(-30);
+      saveState();
+      renderChat();
+    }
+
+    function elapsedFocusSeconds() {
+      return activeProject() ? currentElapsed() : 0;
+    }
+
+    function resolveBuddyImage() {
+      if (showFinishPose) return PET_IMAGES.finish;
+      const elapsed = elapsedFocusSeconds();
+      if (!activeProject() || elapsed < 600) return PET_IMAGES.start;
+      if (elapsed < 1800) return PET_IMAGES.tenMinutes;
+      return Math.floor(elapsed / 8) % 2 === 0 ? PET_IMAGES.start : PET_IMAGES.deepFocus;
+    }
+
+    function updateBuddyImage() {
+      const nextSrc = resolveBuddyImage();
+      if (!els.buddy.src.endsWith(nextSrc)) {
+        els.buddy.src = nextSrc;
+      }
+    }
+
+    function petReply(message) {
+      const text = message.trim();
+      if (/不|没|无|别|否|拒绝|不要|不是|不能|不行|不想|讨厌|算了|停止|关闭/.test(text)) {
+        return "呀哒！";
+      }
+      const replies = ["咿呀", "呀呀", "恩啪啪"];
+      return replies[Math.floor(Math.random() * replies.length)];
+    }
+
+    function speak(text) {
+      els.speech.textContent = text;
+    }
+
+    function bounce() {
+      els.buddy.classList.remove("happy");
+      void els.buddy.offsetWidth;
+      els.buddy.classList.add("happy");
+    }
+
+    function setBuddyMode(mode) {
+      els.buddy.classList.remove("idle", "focus");
+      els.buddy.classList.add(mode);
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function escapeHtml(value) {
+      return value.replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    els.form.addEventListener("submit", event => {
+      event.preventDefault();
+      const name = els.projectName.value.trim();
+      if (!name) return;
+      const targetSeconds = clamp(Number(els.targetMinutes.value) || 25, 1, 999) * 60;
+      const project = {
+        id: crypto.randomUUID(),
+        name,
+        mode: els.timerMode.value,
+        targetSeconds,
+        note: els.projectNote.value.trim(),
+        spentSeconds: 0,
+        completed: 0,
+        lastDone: null
+      };
+      state.projects.unshift(project);
+      state.activeId = project.id;
+      timer.elapsedBeforeStart = 0;
+      showFinishPose = false;
+      els.form.reset();
+      els.targetMinutes.value = 25;
+      saveState();
+      speak("新项目收到，我把书桌整理好啦。");
+      bounce();
+      render();
+    });
+
+    els.projectList.addEventListener("click", event => {
+      const card = event.target.closest(".project-card");
+      if (card) selectProject(card.dataset.id);
+    });
+
+    els.startPause.addEventListener("click", startPause);
+    els.resetTimer.addEventListener("click", resetTimer);
+    els.finishTimer.addEventListener("click", () => completeSession(false));
+    els.deleteProject.addEventListener("click", deleteProject);
+    els.clearDone.addEventListener("click", () => {
+      state.totalSeconds = 0;
+      state.todaySeconds = {};
+      state.completions = 0;
+      state.interactionPoints = 0;
+      state.projects = state.projects.map(project => ({ ...project, spentSeconds: 0, completed: 0 }));
+      saveState();
+      speak("完成记录已经归零，新的篇章开始。");
+      render();
+    });
+
+    els.saveDailyGoal.addEventListener("click", () => {
+      state.dailyGoalMinutes = clamp(Number(els.dailyGoalInput.value) || 60, 1, 1440);
+      saveState();
+      speak(`今日目标改成 ${state.dailyGoalMinutes} 分钟啦。`);
+      renderStats();
+      renderMood();
+    });
+
+    els.toggleForm.addEventListener("click", () => {
+      els.projectName.focus();
+      speak("写下这轮要陪你完成的事吧。");
+    });
+
+    els.chatForm.addEventListener("submit", event => {
+      event.preventDefault();
+      const message = els.chatInput.value.trim();
+      if (!message) return;
+      els.chatInput.value = "";
+      addChat("user", message);
+      const reply = petReply(message);
+      addInteraction(1);
+      addChat("pet", reply);
+      speak(reply);
+      bounce();
+      renderMood();
+      renderStats();
+    });
+
+    document.querySelectorAll("[data-action]").forEach(button => {
+      button.addEventListener("click", () => {
+        const action = button.dataset.action;
+        const lines = {
+          pat: "嘿嘿，电量上升。你也休息一下眼睛。",
+          snack: "收到小点心！接下来我会更认真地陪你。",
+          cheer: "你已经开始了，这件事本身就很了不起。"
+        };
+        const gains = { pat: 3, snack: 6, cheer: 2 };
+        addInteraction(gains[action]);
+        saveState();
+        speak(lines[action]);
+        bounce();
+        renderMood();
+        renderStats();
+      });
+    });
+
+    els.buddy.addEventListener("click", () => {
+      addInteraction(1);
+      saveState();
+      speak(timer.running ? "我在旁边安静陪着，继续读。" : "点到我啦。准备好就开始吧。");
+      bounce();
+      renderMood();
+      renderStats();
+    });
+
+    render();
+  </script>
+</body>
+</html>
