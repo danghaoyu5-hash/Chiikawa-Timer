@@ -213,6 +213,184 @@
       align-items: start;
     }
 
+    body.is-setup {
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+    }
+
+    body.is-setup .app {
+      width: min(560px, calc(100% - 28px));
+      padding: 24px 0;
+    }
+
+    body.is-setup .topbar {
+      display: block;
+      text-align: center;
+    }
+
+    body.is-setup .brand p,
+    body.is-setup .today,
+    body.is-setup .stage,
+    body.is-setup .project-list,
+    body.is-setup .section-title .icon-btn {
+      display: none;
+    }
+
+    body.is-setup .workspace {
+      display: block;
+    }
+
+    body.is-setup .sidebar {
+      padding: 18px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, .96), rgba(255, 240, 246, .92)),
+        var(--panel);
+    }
+
+    body.is-setup .section-title {
+      justify-content: center;
+      text-align: center;
+    }
+
+    body.is-setup .section-title h2 {
+      font-size: 22px;
+    }
+
+    body.is-setup #projectForm {
+      margin-bottom: 0;
+      background: rgba(255, 250, 252, .84);
+    }
+
+    body.is-focus {
+      min-height: 100vh;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 32%, rgba(255, 255, 255, .92), transparent 28%),
+        linear-gradient(180deg, #fff3f8 0%, #ffe1ec 100%);
+    }
+
+    body.is-focus .app {
+      width: 100%;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    body.is-focus .topbar,
+    body.is-focus .sidebar,
+    body.is-focus .status-strip,
+    body.is-focus .stats,
+    body.is-focus .speech,
+    body.is-focus .chat-panel,
+    body.is-focus .mood-row,
+    body.is-focus .interaction-grid,
+    body.is-focus .timer-display h2,
+    body.is-focus .timer-note {
+      display: none;
+    }
+
+    body.is-focus .controls {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 5;
+      display: flex;
+      grid-template-columns: none;
+      gap: 8px;
+      opacity: .16;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+
+    body.is-focus .controls:hover,
+    body.is-focus .controls:focus-within {
+      opacity: 1;
+      transform: translateY(-1px);
+    }
+
+    body.is-focus #resetTimer,
+    body.is-focus #deleteProject {
+      display: none;
+    }
+
+    body.is-focus .controls button {
+      min-height: 38px;
+      padding: 8px 12px;
+      box-shadow: 0 10px 28px rgba(157, 72, 106, .14);
+    }
+
+    body.is-focus .workspace {
+      display: block;
+      width: 100%;
+      min-height: 100vh;
+    }
+
+    body.is-focus .stage {
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr;
+      place-items: center;
+      min-height: 100vh;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    body.is-focus .timer-area,
+    body.is-focus .companion {
+      display: contents;
+    }
+
+    body.is-focus .timer-display,
+    body.is-focus .buddy-scene {
+      grid-area: 1 / 1;
+    }
+
+    body.is-focus .timer-display {
+      align-self: end;
+      z-index: 2;
+      min-height: auto;
+      margin-bottom: min(9vh, 80px);
+      border: 0;
+      background: transparent;
+      padding: 0;
+      pointer-events: none;
+    }
+
+    body.is-focus .clock {
+      color: #7a3a56;
+      font-size: clamp(74px, 15vw, 180px);
+      text-shadow:
+        0 4px 0 #fff,
+        0 12px 28px rgba(188, 71, 120, .2);
+    }
+
+    body.is-focus .buddy-scene {
+      width: 100%;
+      height: 100vh;
+      min-height: 100vh;
+      border: 0;
+      border-radius: 0;
+      background:
+        radial-gradient(circle at 50% 56%, rgba(255, 211, 110, .22), transparent 24%),
+        radial-gradient(circle at 50% 42%, rgba(255, 255, 255, .86), transparent 38%),
+        transparent;
+    }
+
+    body.is-focus .buddy-scene::after {
+      left: 36%;
+      right: 36%;
+      bottom: 22vh;
+      opacity: .55;
+    }
+
+    body.is-focus .buddy {
+      width: min(54vw, 520px);
+      max-height: 58vh;
+      object-fit: contain;
+    }
+
     .panel {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -745,7 +923,7 @@
     <div class="workspace">
       <aside class="panel sidebar">
         <div class="section-title">
-          <h2>读书项目</h2>
+          <h2>创建计时</h2>
           <button class="icon-btn" id="toggleForm" title="新建项目" type="button">＋</button>
         </div>
 
@@ -771,7 +949,7 @@
             <label for="projectNote">陪读备注</label>
             <textarea id="projectNote" maxlength="100" placeholder="今天想完成什么？"></textarea>
           </div>
-          <button class="primary-btn" type="submit">创建项目</button>
+          <button class="primary-btn" type="submit">创建并开始</button>
         </form>
 
         <div id="projectList" class="project-list"></div>
@@ -1054,12 +1232,20 @@
     }
 
     function render() {
+      renderMode();
       renderProjects();
       renderActive();
       renderStats();
       renderMood();
       renderChat();
       updateBuddyImage();
+    }
+
+    function renderMode() {
+      const hasProject = Boolean(activeProject());
+      document.body.classList.toggle("is-setup", !hasProject && !timer.running);
+      document.body.classList.toggle("is-focus", timer.running);
+      document.body.classList.toggle("has-project", hasProject);
     }
 
     function renderProjects() {
@@ -1243,9 +1429,9 @@
       els.form.reset();
       els.targetMinutes.value = 25;
       saveState();
-      speak("新项目收到，我把书桌整理好啦。");
+      speak("新计时收到，开始陪读啦。");
       bounce();
-      render();
+      startPause();
     });
 
     els.projectList.addEventListener("click", event => {
